@@ -13,6 +13,7 @@ struct GuiRunnerSettings
 	const char* window_title;
 	const char* html_uri;
 	const char* extensions_dir;
+	const char* icon;
 };
 
 
@@ -24,6 +25,8 @@ activate (GtkApplication* app,
 
   GtkWidget *window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), ((struct GuiRunnerSettings*)user_data)->window_title );
+  gtk_window_set_default_icon_from_file (((struct GuiRunnerSettings*)user_data)->icon,
+                                       NULL);
   gtk_window_set_default_size (GTK_WINDOW (window), ((struct GuiRunnerSettings*)user_data)->window_width,
                                                     ((struct GuiRunnerSettings*)user_data)->window_height);
   WebKitWebView * web_view =  WEBKIT_WEB_VIEW( webkit_web_view_new() );
@@ -61,7 +64,11 @@ main (int    argc,
   struct GuiRunnerSettings settings={.window_width=600,.window_height=600,.window_title="wkguirunner",.html_uri="https://webkitgtk.org", .extensions_dir=NULL};
   int c;
   opterr = 0;
-  while ((c = getopt (argc, argv, "w:h:t:e:i:")) != -1)
+  if ( argc == 1)
+  {
+  g_print("usage: wkguirunner -w <window_width> -h <window_height> -t <window_title> -c <window_icon> -e <extensions_dir> -i <html_file>");
+  }
+  while ((c = getopt (argc, argv, "w:h:t:e:i:c:")) != -1)
   {
     switch (c)
     {
@@ -80,11 +87,14 @@ main (int    argc,
       case 'i':
         settings.html_uri = optarg;
         break;
+      case 'c':
+        settings.icon = optarg;
+        break;
       case '?':
         if (strchr ("whtei", optopt ) != NULL )
           fprintf (stderr, "Option -%c requires an argument.\n", optopt);
         else if (isprint (optopt))
-          fprintf (stderr, "Unknown option `-%c'.\n", optopt); 
+          fprintf (stderr, "Unknown option: `-%c'.\n", optopt); 
         else fprintf (stderr,"Unknown option character `\\x%x'.\n",optopt);
         return 1;
       default:
@@ -101,7 +111,7 @@ main (int    argc,
                     (gpointer)&settings);
   g_signal_connect (app, "activate", G_CALLBACK (activate), (gpointer)&settings);
 
-  status = g_application_run (G_APPLICATION (app), argc, argv);
+  status = g_application_run (G_APPLICATION (app), /*argc*/ 1, argv);
   g_object_unref (app);
 
   return status;
